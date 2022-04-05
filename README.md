@@ -150,10 +150,34 @@ x = np.random.multivariate_normal(mu, toeplitz(v), size=n) # this where we gener
 y = np.matmul(x,beta_star).reshape(-1,1) + sigma*np.random.normal(0,1,size=(n,1))
 ```
 Now that we have the data sets we apply each of the models to the data to find the optimal hyper parameters
+This was determined by which hyper parameters gave the lowest MSE
 
 ```Python
-
-
+#Starting with Lasso and testing using the Norm it appears that an Alpha of .84 is optimal
+model_Las = Lasso(alpha=.84,fit_intercept=False,max_iter=10000)
+model_Las.fit(x,y)
+```
+```Python
+#After some testing alpha for Ridge is optimal at about 380
+#I did some research online and it seemed ok to have an alpha this large but I am not sure
+model_Rid = Ridge(alpha=380,fit_intercept=False,max_iter=10000)
+model_Rid.fit(x,y)
+```
+```Python
+#after sone testing it appears that a good alpha value is .9 and the optimal l1 ratio is .59
+model_ElN = ElasticNet(alpha=.9,l1_ratio=.59,fit_intercept=False,max_iter=10000)
+model_ElN.fit(x,y)
+```
+```Python
+#After some testing it appears that .16 is the optimal alpha value
+model_SRL = SQRTLasso(alpha=0.16)
+model_SRL.fit(x,y)
+```
+```Python
+#After testing SCAD the optimal hyperparameters seem to be .91 for Alpha and .2 for Lambda
+model_SCAD = SCAD(a=.91,lam=.2)
+model_SCAD.fit(x,y)
+```
 
 
 
