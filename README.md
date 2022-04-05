@@ -179,5 +179,109 @@ model_SCAD = SCAD(a=.91,lam=.2)
 model_SCAD.fit(x,y)
 ```
 
+### Apply to 100 sets of fictucious data
+
+Now we generate 100 sets of fictucous data and loop each of the models with our optimal hyperparameters on all of them
+I recorded the RMSE l2 norms and the number of correct non zero results and average them to determine which model is optimal
+
+```Python
+NumCorrect_lasso = []
+NumCorrect_ridge = []
+NumCorrect_elastic = []
+NumCorrect_sqrtlas = []
+NumCorrect_scad = []
 
 
+for s in range(100):
+  v = []
+  for i in range(p):
+    v.append(0.8**i)
+
+  mu = [0]*p
+  sigma = 3.5
+  # Generate the random samples.
+  np.random.seed(s)
+  x = np.random.multivariate_normal(mu, toeplitz(v), size=n) # this where we generate some fake data
+  #y = X.dot(beta) + sigma*np.random.normal(0,1,[num_samples,1])
+  y = np.matmul(x,beta_star).reshape(-1,1) + sigma*np.random.normal(0,1,size=(n,1))
+
+
+  model_Las.fit(x,y)
+  rmse_lasso.append(np.sqrt(mean_squared_error(y,model_Las.predict(x))))
+  l2_lasso.append(np.linalg.norm(model_Las.coef_-beta_star,ord=2))
+  pos_lasso = np.where(model_Las.coef_!=0)
+  NumCorrect_lasso.append(np.intersect1d(pos,pos_lasso).shape[0])
+
+  model_Rid.fit(x,y)
+  rmse_ridge.append(np.sqrt(mean_squared_error(y,model_Rid.predict(x))))
+  l2_ridge.append(np.linalg.norm(model_Rid.coef_-beta_star,ord=2))
+  pos_ridge = np.where(model_Rid.coef_!=0)
+  NumCorrect_ridge.append(np.intersect1d(pos,pos_ridge).shape[0])
+
+  model_ElN.fit(x,y)
+  rmse_elastic.append(np.sqrt(mean_squared_error(y,model_ElN.predict(x))))
+  l2_elastic.append(np.linalg.norm(model_ElN.coef_-beta_star,ord=2))
+  pos_elastic = np.where(model_ElN.coef_!=0)
+  NumCorrect_elastic.append(np.intersect1d(pos,pos_elastic).shape[0])
+
+  model_SRL.fit(x,y)
+  rmse_sqrtlas.append(np.sqrt(mean_squared_error(y,model_SRL.predict(x))))
+  l2_sqrtlas.append(np.linalg.norm(model_SRL.coef_-beta_star,ord=2))
+  pos_sqrtlas = np.where(model_SRL.coef_!=0)
+  NumCorrect_sqrtlas.append(np.intersect1d(pos,pos_sqrtlas).shape[0])
+
+  model_SCAD.fit(x,y)
+  rmse_scad.append(np.sqrt(mean_squared_error(y,model_SCAD.predict(x))))
+  l2_scad.append(np.linalg.norm(model_SCAD.coef_-beta_star,ord=2))
+  pos_scad = np.where(model_SCAD.coef_!=0)
+  NumCorrect_scad.append(np.intersect1d(pos,pos_scad).shape[0])
+```
+Now Report the results
+```Python
+print('Average Root MSE for Lasso is', np.mean(rmse_lasso))
+print('Average l2 distance for Lasso is', np.mean(l2_lasso))
+print('Average number of correct non-zero coefficients for Lasso is', np.mean(NumCorrect_lasso))
+print()
+print('Average Root MSE for Ridge is', np.mean(rmse_ridge))
+print('Average l2 distance for Ridge is', np.mean(l2_ridge))
+print('Average number of correct non-zero coefficients for Ridge is', np.mean(NumCorrect_ridge))
+print()
+print('Average Root MSE for Elastic Net is', np.mean(rmse_elastic))
+print('Average l2 distance for Elastic Net is', np.mean(l2_elastic))
+print('Average number of correct non-zero coefficients for elastic net is', np.mean(NumCorrect_elastic))
+print()
+print('Average Root MSE for Square Root Lasso is', np.mean(rmse_sqrtlas))
+print('Average l2 distance for Square Root Lasso is', np.mean(l2_sqrtlas))
+print('Average number of correct non-zero coefficients for Square Root Lasso is', np.mean(NumCorrect_sqrtlas))
+print()
+print('Average Root MSE for SCAD is', np.mean(rmse_scad))
+print('Average l2 distance for SCAD is', np.mean(l2_scad))
+print('Average number of correct non-zero coefficients for SCAD is', np.mean(NumCorrect_scad))
+print()
+```
+Output
+```Markdown
+Average Root MSE for Lasso is 3.807166487525358
+Average l2 distance for Lasso is 2.5917062359299017
+Average number of correct non-zero coefficients for Lasso is 18.99
+
+Average Root MSE for Ridge is 2.1384954485213052
+Average l2 distance for Ridge is 2.7713568017843415
+Average number of correct non-zero coefficients for Ridge is 27.0
+
+Average Root MSE for Elastic Net is 3.511669965132439
+Average l2 distance for Elastic Net is 1.47758221146977
+Average number of correct non-zero coefficients for elastic net is 24.61
+
+Average Root MSE for Square Root Lasso is 3.4561694207211104
+Average l2 distance for Square Root Lasso is 1.3200285669763323
+Average number of correct non-zero coefficients for Square Root Lasso is 27.0
+
+Average Root MSE for SCAD is 9.643333594454337
+Average l2 distance for SCAD is 3.8291643997091573
+Average number of correct non-zero coefficients for SCAD is 27.0
+```
+
+Conclusion
+Ridge offered the lowest RMSE of all of the models while Elastic Net and Square Root Lasso both had the smallest L2 norm distances
+Ridge, SR Lasso, and SCAD all correctly included all 27 non zero coefficients but this was because they all predicted a very large amount
